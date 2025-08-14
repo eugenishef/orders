@@ -1,0 +1,18 @@
+{
+  "comment": "Обычный заказ",
+  "deliveryDate": "2025-08-08T18:00:00",
+  "deliveryAddress": "г. Москва, ул. Пример",
+  "items": [
+    {
+      "barcode": "123456789",
+      "name": "Яблоко",
+      "type": "Фрукт",
+      "age": "1 день",
+      "pricePerKg": 100,
+      "quantity": 2,
+      "origin": "Россия",
+      "weight": 1.2
+    }
+  ],
+  "weight": 25.106
+}

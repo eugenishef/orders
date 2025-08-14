@@ -1,0 +1,34 @@
+spring:
+  profiles:
+    active: default
+
+  datasource:
+#    url: jdbc:p6spy:postgresql://localhost:5432/orders_db
+    url: jdbc:postgresql://localhost:5432/orders_db
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+#    driver-class-name: com.p6spy.engine.spy.P6SpyDriver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+
+logging:
+  level:
+#    com.p6spy: debug
+    org.hibernate.SQL: debug
+    org.hibernate.type.descriptor.sql.BasicBinder: trace
+
+server:
+  port: 8081
