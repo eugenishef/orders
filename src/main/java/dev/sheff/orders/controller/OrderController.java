@@ -1,7 +1,10 @@
 package dev.sheff.orders.controller;
 
+import dev.sheff.orders.constraints.ApiRoutes;
 import dev.sheff.orders.dto.CreateOrderDto;
 import dev.sheff.orders.dto.OrderResponseDto;
+import dev.sheff.orders.dto.UpdateOrderDto;
+import dev.sheff.orders.mapper.OrderMapper;
 import dev.sheff.orders.model.Order;
 import dev.sheff.orders.service.OrderService;
 import jakarta.persistence.EntityNotFoundException;
@@ -15,25 +18,53 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
+
+/**
+ * Контроллер для управления заказами.
+ * <p>
+ * Предоставляет REST API для:
+ * <ul>
+ *     <li>{@link #createOrder(CreateOrderDto) Создания заказа}</li>
+ *     <li>{@link #getAllOrders() Получения списка всех заказов}</li>
+ *     <li>{@link #getOrderById(Long) Получения заказа по ID}</li>
+ *     <li>{@link #getOrder(String, String) Поиска заказов по номеру и статусу}</li>
+ * </ul>
+ *
+ * Базовый URL: {@link dev.sheff.orders.constraints.ApiRoutes#ORDERS}
+ *
+ * @author Evgenii Shevchenko
+ * @since 1.0.0
+ */
 @Slf4j
 @RestController
-@RequestMapping("/api")
+@RequestMapping(ApiRoutes.ORDERS)
 @RequiredArgsConstructor
 public class OrderController {
+
+  private final OrderMapper orderMapper;
+
   private final OrderService orderService;
 
-  @GetMapping("/orders/all")
+  @PostMapping
+  public ResponseEntity<Order> createOrder(@Valid @RequestBody CreateOrderDto request) {
+    Long mockUserId = 1L;
+
+    Order order = orderService.createOrder(request, mockUserId);
+    return ResponseEntity.ok(order);
+  }
+
+  @GetMapping
   public ResponseEntity<List<OrderResponseDto>> getAllOrders() {
     return ResponseEntity.ok(orderService.findAll());
   }
 
-  @GetMapping("/order/{id}")
+  @GetMapping("/{id}")
   public ResponseEntity<OrderResponseDto> getOrderById(@PathVariable("id") Long id) {
     OrderResponseDto dto = orderService.findOrderById(id);
     return ResponseEntity.ok(dto);
   }
 
-  @GetMapping("/order")
+  @GetMapping("/search")
   public ResponseEntity<?> getOrder(
       @RequestParam(value = "id", required = false) String idStr,
       @RequestParam(value = "number", required = false) String number) {
@@ -68,12 +99,17 @@ public class OrderController {
     }
   }
 
+  @PutMapping("/{id}")
+  public ResponseEntity<OrderResponseDto> chageOrderById(@PathVariable("id") Long id, @Valid @RequestBody UpdateOrderDto request) {
+    OrderResponseDto dto = orderService.updateOrderById(id, request);
 
-  @PostMapping("/orders")
-  public ResponseEntity<Order> createOrder(@Valid @RequestBody CreateOrderDto request) {
-    Long mockUserId = 1L;
+    return ResponseEntity.ok(dto);
+  }
 
-    Order order = orderService.createOrder(request, mockUserId);
-    return ResponseEntity.ok(order);
+  @DeleteMapping("/{id}")
+  public ResponseEntity<?> deleteOrderById(@PathVariable("id") Long id) {
+    orderService.deleteOrderById(id);
+
+    return ResponseEntity.ok("Заказ был успешно удален");
   }
 }

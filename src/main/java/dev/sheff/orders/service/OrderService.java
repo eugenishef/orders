@@ -2,6 +2,7 @@ package dev.sheff.orders.service;
 
 import dev.sheff.orders.dto.CreateOrderDto;
 import dev.sheff.orders.dto.OrderResponseDto;
+import dev.sheff.orders.dto.UpdateOrderDto;
 import dev.sheff.orders.mapper.OrderMapper;
 import dev.sheff.orders.model.Item;
 import dev.sheff.orders.model.Order;
@@ -44,7 +45,6 @@ public class OrderService {
   }
 
 
-
   /**
    * TODO: Поправить запись в таблицу orders
    * - origin и weight не записываются
@@ -80,6 +80,38 @@ public class OrderService {
     order.setWeight(calculateWeight(itemsList));
 
     return orderRepository.save(order);
+  }
+
+  public OrderResponseDto updateOrderById(Long id, UpdateOrderDto request) {
+    Order order = orderRepository.findById(id)
+        .orElseThrow(() -> new EntityNotFoundException("Заказ №" + id + " не найден"));
+
+    if (request.getComment() != null) {
+      order.setComment(request.getComment());
+    }
+
+    if (request.getDeliveryDate() != null) {
+      order.setDeliveryDate(request.getDeliveryDate());
+    }
+
+    if (request.getDeliveryAddress() != null) {
+      order.setDeliveryAddress(request.getDeliveryAddress());
+    }
+
+    if (request.getStatus() != null) {
+      order.setStatus(request.getStatus());
+    }
+
+    orderRepository.save(order);
+
+    return  orderMapper.toDto(order);
+  }
+
+  public void deleteOrderById(Long id) {
+    Order order = orderRepository.findById(id)
+            .orElseThrow(() -> new EntityNotFoundException("Заказ №" + id + " не найден"));
+
+    orderRepository.delete(order);
   }
 
   private BigDecimal calculateTotalPrice(List<Item> items) {
