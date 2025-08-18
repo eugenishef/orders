@@ -55,13 +55,15 @@ public class OrderController {
 
   @GetMapping
   public ResponseEntity<List<OrderResponseDto>> getAllOrders() {
-    return ResponseEntity.ok(orderService.findAll());
+    List<Order> orderList = orderService.findAll();
+    return ResponseEntity.ok(orderMapper.toDtoList(orderList));
   }
 
   @GetMapping("/{id}")
   public ResponseEntity<OrderResponseDto> getOrderById(@PathVariable("id") Long id) {
-    OrderResponseDto dto = orderService.findOrderById(id);
-    return ResponseEntity.ok(dto);
+    Order order = orderService.findOrderById(id);
+
+    return ResponseEntity.ok(orderMapper.toDto(order));
   }
 
   @GetMapping("/search")
@@ -80,11 +82,11 @@ public class OrderController {
     try {
       if (hasId) {
         Long id = Long.parseLong(idStr.trim());
-        OrderResponseDto dto = orderService.findOrderById(id);
-        return ResponseEntity.ok(dto);
+        Order order = orderService.findOrderById(id);
+        return ResponseEntity.ok(orderMapper.toDto(order));
       } else {
-        OrderResponseDto dto = orderService.findOrderByNumber(number.trim());
-        return ResponseEntity.ok(dto);
+        Order order = orderService.findOrderByNumber(number.trim());
+        return ResponseEntity.ok(orderMapper.toDto(order));
       }
     } catch (NumberFormatException ex) {
       return ResponseEntity.badRequest()
@@ -101,9 +103,9 @@ public class OrderController {
 
   @PutMapping("/{id}")
   public ResponseEntity<OrderResponseDto> chageOrderById(@PathVariable("id") Long id, @Valid @RequestBody UpdateOrderDto request) {
-    OrderResponseDto dto = orderService.updateOrderById(id, request);
+    Order order = orderService.updateOrderById(id, request);
 
-    return ResponseEntity.ok(dto);
+    return ResponseEntity.ok(orderMapper.toDto(order));
   }
 
   @DeleteMapping("/{id}")

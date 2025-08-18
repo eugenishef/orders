@@ -1,5 +1,6 @@
 package dev.sheff.orders.service;
 
+import dev.sheff.orders.dto.CreateItemDto;
 import dev.sheff.orders.dto.CreateOrderDto;
 import dev.sheff.orders.dto.OrderResponseDto;
 import dev.sheff.orders.dto.UpdateOrderDto;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -23,25 +25,19 @@ public class OrderService {
   private final OrderRepository orderRepository;
   private final OrderMapper orderMapper;
 
-  public List<OrderResponseDto> findAll() {
+  public List<Order> findAll() {
     List<Order> orders = orderRepository.findAll();
 
-    return orderMapper.toDtoList(orders);
+    return orders;
   }
 
-  public OrderResponseDto findOrderById(Long id) {
-    Order order = orderRepository
-        .findById(id)
+  public Order findOrderById(Long id) {
+    return orderRepository.findById(id)
         .orElseThrow(() -> new EntityNotFoundException("Заказ с id:" + id + "не найден"));
-
-    return orderMapper.toDto(order);
   }
 
-  public OrderResponseDto findOrderByNumber(String number) {
-    Order order = orderRepository
-        .findByNumber(number);
-
-    return orderMapper.toDto(order);
+  public Order findOrderByNumber(String number) {
+    return orderRepository.findByNumber(number);
   }
 
 
@@ -50,61 +46,45 @@ public class OrderService {
    * - origin и weight не записываются
    */
   public Order createOrder(CreateOrderDto orderDto, Long userId) {
-    Order order = new Order();
+    List<Item> itemsList = orderDto.getItems().stream()
+        .map(i -> Item.builder()
+            .barcode(i.getBarcode())
+            .name(i.getName())
+            .type(i.getType())
+            .age(i.getAge())
+            .pricePerKg(i.getPricePerKg())
+            .quantity(i.getQuantity())
+            .available(true)
+            .build()
+        ).toList();
 
-    order.setNumber(UUID.randomUUID().toString());
-    order.setStatus(Status.NEW);
-    order.setCreatedAt(LocalDateTime.now());
-
-    order.setDeliveryAddress(orderDto.getDeliveryAddress());
-    order.setDeliveryDate(orderDto.getDeliveryDate());
-    order.setComment(order.getComment());
-    order.setUserId(userId);
-
-    List<Item> itemsList = orderDto.getItems().stream().map(i -> {
-      Item item = new Item();
-
-      item.setBarcode(i.getBarcode());
-      item.setName(i.getName());
-      item.setType(i.getType());
-      item.setAge(i.getAge());
-      item.setPricePerKg(i.getPricePerKg());
-      item.setQuantity(i.getQuantity());
-      item.setAvailable(true);
-
-      return item;
-    }).toList();
-
-    order.setItems(itemsList);
-    order.setTotalPrice(calculateTotalPrice(itemsList));
-    order.setWeight(calculateWeight(itemsList));
+    Order order = Order.builder()
+        .number(UUID.randomUUID().toString())
+        .status(Status.NEW)
+        .createdAt(LocalDateTime.now())
+        .deliveryAddress(orderDto.getDeliveryAddress())
+        .deliveryDate(orderDto.getDeliveryDate())
+        .comment(orderDto.getComment())
+        .userId(userId)
+        .items(itemsList)
+        .totalPrice(calculateTotalPrice(itemsList))
+        .weight(calculateWeight(itemsList))
+        .build();
 
     return orderRepository.save(order);
   }
 
-  public OrderResponseDto updateOrderById(Long id, UpdateOrderDto request) {
+
+  public Order updateOrderById(Long id, UpdateOrderDto request) {
     Order order = orderRepository.findById(id)
         .orElseThrow(() -> new EntityNotFoundException("Заказ №" + id + " не найден"));
 
-    if (request.getComment() != null) {
-      order.setComment(request.getComment());
-    }
+    Optional.ofNullable(request.getComment()).ifPresent(order::setComment);
+    Optional.ofNullable(request.getDeliveryDate()).ifPresent(order::setDeliveryDate);
+    Optional.ofNullable(request.getDeliveryAddress()).ifPresent(order::setDeliveryAddress);
+    Optional.ofNullable(request.getStatus()).ifPresent(order::setStatus);
 
-    if (request.getDeliveryDate() != null) {
-      order.setDeliveryDate(request.getDeliveryDate());
-    }
-
-    if (request.getDeliveryAddress() != null) {
-      order.setDeliveryAddress(request.getDeliveryAddress());
-    }
-
-    if (request.getStatus() != null) {
-      order.setStatus(request.getStatus());
-    }
-
-    orderRepository.save(order);
-
-    return  orderMapper.toDto(order);
+    return orderRepository.save(order);
   }
 
   public void deleteOrderById(Long id) {
